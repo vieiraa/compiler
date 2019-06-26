@@ -1,3 +1,6 @@
+import sys
+import fileinput
+
 class Token:
     def __init__(self, token, what, line, column):
         self.token = token
@@ -15,7 +18,8 @@ KEYWORDS = ['program', 'var', 'integer', 'real',
             'boolean', 'procedure', 'begin', 'end',
             'if', 'then', 'else', 'while', 'do', 'not']
 
-def tokenize(string):
+def tokenize(infile):
+    string = infile.read()
     temp = ""
     column = 0
     line = 0
@@ -136,22 +140,16 @@ def tokenize(string):
 
     return tokens
 
-def main():
-    string = """
-program teste;
-var
-    valor1: integer;
-    valor2: real;
-    valor3: boolean;
-begin
-    valor2 := 10.5;
-    valor1 := 10;
-    valor3 := 10 <= 5;
-end.
-"""
-    tokens = tokenize(string)
-    #print("string = " + string + ", size = " + str(len(string)))
-    print("tokens = " + str(tokens))
-
 if __name__ == "__main__":
-    main()
+    tokens = []
+    if len(sys.argv) != 2:
+        print(f'Usage: python {fileinput.filename}')
+        sys.exit(0)
+
+    with open(sys.argv[1], 'r') as infile:
+        tokens = tokenize(infile)
+
+    with open('table.txt', 'w') as outfile:
+        for token in tokens:
+            outfile.write(str(token))
+        outfile.write('\n')
