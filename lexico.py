@@ -1,5 +1,3 @@
-import re
-
 class Token:
     def __init__(self, token, what, line, column):
         self.token = token
@@ -17,139 +15,142 @@ KEYWORDS = ['program', 'var', 'integer', 'real',
             'boolean', 'procedure', 'begin', 'end',
             'if', 'then', 'else', 'while', 'do', 'not']
 
-def tokenize(buffer):
+def tokenize(string):
     temp = ""
     column = 0
     line = 0
-    is_if = ''
-    aux = ''
     token_type = ''
-    
+    is_real = False
+    is_id = False
+
     tokens = []
-    i = 0
-    for i in range(len(buffer)):
+    for i in range(len(string)):
         try:
-            if buffer[i] == '\n':
+            if string[i] == '\n':
                 line += 1
                 column = 0
                 continue
 
-            elif buffer[i] != '}' and token_type == 'comment':
+            elif string[i] != '}' and token_type == 'comment':
                 column += 1
                 continue
 
-            elif buffer[i] == '}' and token_type == 'comment':
-                column += 1
+            elif string[i] == '}' and token_type == 'comment':
                 token_type = ''
-                continue
-
-            elif buffer[i].isspace():
                 column += 1
                 continue
 
-            elif buffer[i] == '{':
+            elif string[i].isspace():
                 column += 1
+                continue
+
+            elif string[i] == '{':
                 token_type = 'comment'
                 continue
 
-            elif buffer[i].isnumeric():
-                aux = buffer[i + 1]
-                temp += buffer[i]
-                column += 1
-                token_type = 'integer'
+            elif string[i].isnumeric():
+                aux = string[i + 1]
+                temp += string[i]
 
                 if aux == '.':
                     token_type = 'real'
                     temp += aux
-                                        
+                    is_real = True
+                    continue
+
+                elif not is_real and not is_id:
+                    token_type = 'integer'
+
+                elif is_id:
+                    token_type = 'identifier'
+
                 if not aux.isnumeric():
                     raise ValueError()
 
                 continue
 
-            elif buffer[i] in [':', ';', '.', ',', '(', ')'] and token_type not in ['real', 'integer']:
-                column += 1
-                temp += buffer[i]
-                token_type = 'delimiter'
-                print(buffer[i])
-                if buffer[i] == ':':
-                    print('oi')
-                    aux = buffer[i + 1]
-                    if aux == '=':
-                        token_type = 'assignment'
-                        column += 1
-                        temp += aux
-                        raise ValueError()
-                    
+            elif string[i] in [':', ';', '.', ',', '(', ')'] and token_type not in ['real', 'integer']:
+                aux = string[i + 1]
+                temp += string[i]
+                if aux == '=':
+                    continue
+                else:
+                    token_type = 'delimiter'
+
                 raise ValueError()
 
-            elif buffer[i] in ['=', '<', '>'] and not token_type == 'assignment':
+            elif string[i] in ['=', '<', '>']:
                 token_type = 'relational'
-                column += 1
-                temp += buffer[i]
-                aux = buffer[i + 1]
+                temp += string[i]
+                if temp == ':=':
+                    token_type = 'assignment'
+                    raise ValueError()
+
+                aux = string[i + 1]
                 if aux in ['=', '>']:
-                    temp += aux
-                    column += 1
-                    raise ValueError()
+                    continue
 
                 raise ValueError()
 
-            elif buffer[i] in ['+', '-']:
+            elif string[i] in ['+', '-']:
                 token_type = 'aditive'
-                column += 1
-                temp += buffer[i]
+                temp += string[i]
                 raise ValueError()
 
-            elif buffer[i] in ['*', '/']:
+            elif string[i] in ['*', '/']:
                 token_type = 'multiplicative'
-                column += 1
-                temp += buffer[i]
+                temp += string[i]
                 raise ValueError()
 
-            elif buffer[i].isalnum() or buffer[i] == '_':
-                temp += buffer[i]
-                aux = buffer[i + 1]
-                column += 1
-                if temp in KEYWORDS:
-                    token_type = 'keyword'
-                    raise ValueError()
+            elif string[i].isalnum() or string[i] == '_':
+                temp += string[i]
+                aux = string[i + 1]
+                is_id = True
+                if not aux.isalnum():
+                    if temp in KEYWORDS:
+                        token_type = 'keyword'
+                        raise ValueError()
 
-                elif temp == 'and':
-                    token_type = 'multiplicative'
-                    raise ValueError()
+                    elif temp == 'and':
+                        token_type = 'multiplicative'
+                        raise ValueError()
 
-                elif temp == 'or':
-                    token_type = 'aditive'
-                    raise ValueError()
+                    elif temp == 'or':
+                        token_type = 'aditive'
+                        raise ValueError()
                 
-                elif not aux.isalnum():
-                    token_type = 'identifier'
-                    raise ValueError()
+                    else:
+                        token_type = 'identifier'
+                        raise ValueError()
 
                 continue
 
         except:
-            print(temp == '>')
             tokens.append(Token(temp, token_type, line, column))
             column += len(temp)
-            temp = ""
+            token_type = ''
+            is_real = False
+            is_id = False
+            temp = ''
             continue
 
     return tokens
 
 def main():
-    buffer = """
-    program teste; {programa exemplo}
-    var
-        valor1: integer;
-        valor2: real;
-    begin
-        valor1 := 10 <> 2;
-    end.
+    string = """
+program teste;
+var
+    valor1: integer;
+    valor2: real;
+    valor3: boolean;
+begin
+    valor2 := 10.5;
+    valor1 := 10;
+    valor3 := 10 <= 5;
+end.
 """
-    tokens = tokenize(buffer)
-    print("buffer = " + buffer + ", size = " + str(len(buffer)))
+    tokens = tokenize(string)
+    #print("string = " + string + ", size = " + str(len(string)))
     print("tokens = " + str(tokens))
 
 if __name__ == "__main__":
