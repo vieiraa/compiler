@@ -18,8 +18,7 @@ KEYWORDS = ['program', 'var', 'integer', 'real',
             'boolean', 'procedure', 'begin', 'end',
             'if', 'then', 'else', 'while', 'do', 'not']
 
-def tokenize(infile):
-    string = infile.read()
+def tokenize(string):
     temp = ""
     column = 0
     line = 0
@@ -147,7 +146,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     with open(sys.argv[1], 'r') as infile:
-        tokens = tokenize(infile)
+        tokens = tokenize(infile.read())
 
     with open('table.txt', 'w') as outfile:
         for token in tokens:
