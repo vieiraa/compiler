@@ -30,6 +30,7 @@ def tokenize(string):
     line = 0
     token_type = ''
     is_real = False
+    is_power = False
     is_id = False
     comment = None
 
@@ -70,10 +71,14 @@ def tokenize(string):
                 elif not is_real and not is_id:
                     token_type = 'integer'
 
-                elif is_id:
+                elif is_id and not is_power:
                     token_type = 'identifier'
 
-                if not aux.isnumeric():
+                if aux in ['e', 'E']:
+                    is_power = True
+                    continue
+
+                elif not aux.isnumeric():
                     raise TokenFoundException
 
                 continue
@@ -103,6 +108,11 @@ def tokenize(string):
 
             elif string[i] in ['+', '-']:
                 token_type = 'aditive'
+                if is_power:
+                    temp += string[i]
+                    token_type = 'power'
+                    continue
+                
                 temp += string[i]
                 raise TokenFoundException
 
@@ -114,6 +124,10 @@ def tokenize(string):
             elif string[i].isalnum() or string[i] == '_':
                 temp += string[i]
                 aux = string[i + 1]
+                if string[i] in ['e', 'E'] and is_real:
+                    token_type = 'power'
+                    continue
+                    
                 is_id = True
                 if not aux.isalnum():
                     if temp in KEYWORDS:
