@@ -2,8 +2,8 @@ import sys
 import fileinput
 
 class Token:
-    def __init__(self, token, what, line, column):
-        self.token = token
+    def __init__(self, tok, what, line, column):
+        self.token = tok
         self.line = line
         self.column = column
         self.what = what
@@ -45,11 +45,11 @@ def tokenize(string):
                 if string[i] == '}':
                     column += 1
                     comment = None
-                    break
+                    continue
                 column += 1
                 continue
 
-            elif string[i] == '{':
+            elif string[i] == '{' and comment is None:
                 comment = Token('comment', 'comment', line, column)
                 continue
 
