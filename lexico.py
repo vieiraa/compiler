@@ -9,10 +9,16 @@ class Token:
         self.what = what
 
     def __repr__(self):
-        return f"\n<{self.line}:{self.column} | {self.token} | {self.what}>"
+        return f"<{self.line}:{self.column} | {self.token} | {self.what}>\n"
 
     def __str__(self):
-        return f"\n<{self.line}:{self.column} | {self.token} | {self.what}>"
+        return f"<{self.line}:{self.column} | {self.token} | {self.what}>\n"
+
+class TokenFoundException(Exception):
+    pass
+
+class InvalidSymbolError(Exception):
+    pass
 
 KEYWORDS = ['program', 'var', 'integer', 'real',
             'boolean', 'procedure', 'begin', 'end',
@@ -25,6 +31,7 @@ def tokenize(string):
     token_type = ''
     is_real = False
     is_id = False
+    comment = None
 
     tokens = []
     for i in range(len(string)):
@@ -34,21 +41,20 @@ def tokenize(string):
                 column = 0
                 continue
 
-            elif string[i] != '}' and token_type == 'comment':
-                column += 1
-                continue
-
-            elif string[i] == '}' and token_type == 'comment':
-                token_type = ''
-                column += 1
-                continue
-
-            elif string[i].isspace():
+            if comment is not None:
+                if string[i] == '}':
+                    column += 1
+                    comment = None
+                    break
                 column += 1
                 continue
 
             elif string[i] == '{':
-                token_type = 'comment'
+                comment = Token('comment', 'comment', line, column)
+                continue
+
+            elif string[i].isspace():
+                column += 1
                 continue
 
             elif string[i].isnumeric():
@@ -68,42 +74,42 @@ def tokenize(string):
                     token_type = 'identifier'
 
                 if not aux.isnumeric():
-                    raise ValueError()
+                    raise TokenFoundException
 
                 continue
 
             elif string[i] in [':', ';', '.', ',', '(', ')'] and token_type not in ['real', 'integer']:
                 aux = string[i + 1]
                 temp += string[i]
-                if aux == '=':
+                if temp == ':' and aux == '=':
                     continue
                 else:
                     token_type = 'delimiter'
 
-                raise ValueError()
+                raise TokenFoundException
 
             elif string[i] in ['=', '<', '>']:
                 token_type = 'relational'
                 temp += string[i]
                 if temp == ':=':
                     token_type = 'assignment'
-                    raise ValueError()
+                    raise TokenFoundException
 
                 aux = string[i + 1]
-                if aux in ['=', '>']:
+                if temp != '=' and aux in ['=', '>']:
                     continue
 
-                raise ValueError()
+                raise TokenFoundException
 
             elif string[i] in ['+', '-']:
                 token_type = 'aditive'
                 temp += string[i]
-                raise ValueError()
+                raise TokenFoundException
 
             elif string[i] in ['*', '/']:
                 token_type = 'multiplicative'
                 temp += string[i]
-                raise ValueError()
+                raise TokenFoundException
 
             elif string[i].isalnum() or string[i] == '_':
                 temp += string[i]
@@ -112,23 +118,26 @@ def tokenize(string):
                 if not aux.isalnum():
                     if temp in KEYWORDS:
                         token_type = 'keyword'
-                        raise ValueError()
+                        raise TokenFoundException
 
                     elif temp == 'and':
                         token_type = 'multiplicative'
-                        raise ValueError()
+                        raise TokenFoundException
 
                     elif temp == 'or':
                         token_type = 'aditive'
-                        raise ValueError()
-                
+                        raise TokenFoundException
+
                     else:
                         token_type = 'identifier'
-                        raise ValueError()
+                        raise TokenFoundException
 
                 continue
 
-        except:
+            if token_type == '':
+                raise InvalidSymbolError
+
+        except TokenFoundException:
             tokens.append(Token(temp, token_type, line, column))
             column += len(temp)
             token_type = ''
@@ -137,12 +146,20 @@ def tokenize(string):
             temp = ''
             continue
 
+        except InvalidSymbolError:
+            print('Invalid symbol: ' + string[i])
+            exit(0)
+
+    if comment is not None:
+        print(f'Non-closed comment starting at {comment.line}:{comment.column}')
+        exit(1)
+
     return tokens
 
 if __name__ == "__main__":
     tokens = []
     if len(sys.argv) != 2:
-        print(f'Usage: python {fileinput.filename}')
+        print(f'Usage: python lexico.py filename')
         sys.exit(0)
 
     with open(sys.argv[1], 'r') as infile:
@@ -151,4 +168,3 @@ if __name__ == "__main__":
     with open('table.txt', 'w') as outfile:
         for token in tokens:
             outfile.write(str(token))
-        outfile.write('\n')
