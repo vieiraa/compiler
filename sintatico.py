@@ -253,13 +253,13 @@ class Sintatico:
                     raise ValueError()
                 else:
                     token = self.ativacao_procedimento(token)
-                    token = self.lista_expressoes(token)
-                    ret = token
+                    ret = self.next_token()
                     raise ValueError()
 
             elif token.token == 'if':
                 token = self.next_token()
                 token = self.expressao(token)
+                token = self.next_token()
                 if token.token == 'then':
                     token = self.next_token()
                     aux = self.comando(token)
@@ -278,6 +278,7 @@ class Sintatico:
             elif token.token == 'while':
                 token = self.next_token()
                 token = self.expressao(token)
+                token = self.next_token()
                 if token.token == 'do':
                     token = self.next_token()
                     token = self.comando(token)
@@ -297,7 +298,6 @@ class Sintatico:
                 return ret
             raise Exception('Missing ;')
 
-
     def parte_else(self, token):
         if DEBUG:
             print('else')
@@ -313,22 +313,11 @@ class Sintatico:
     def ativacao_procedimento(self, token):
         if DEBUG:
             print('ativ proc')
-
-        if token.what == 'Identifier':
-            token = self.next_token()
-            token = self._ativacao_procedimento(token)
-            return token
-
-    def _ativacao_procedimento(self, token):
         if token.token == '(':
             token = self.next_token()
             token = self.lista_expressoes(token)
-            if token.token == ')':
-                return self.next_token()
-
-            raise Exception("Missing ')'")
-
-        return self.next_token()
+            return token
+        return token
 
     def lista_expressoes(self, token):
         if DEBUG:
@@ -348,7 +337,7 @@ class Sintatico:
             if token is not None:
                 token = self._lista_expressoes(token)
 
-        return self.next_token()
+        return token#self.next_token()
 
     def expressao(self, token):
         if DEBUG:
@@ -432,7 +421,7 @@ class Sintatico:
             token = self.next_token()
             token = self.expressao(token)
             if token.token == ')':
-                return self.next_token()
+                return token#self.next_token()
             raise Exception('Missing )')
 
         elif token.token == 'not':

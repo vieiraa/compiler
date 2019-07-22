@@ -29,5 +29,6 @@ begin
    valor:= 20 >= 10;
    valor:=20=10;
    valor:=true;
+   valor(0,1, 2);
 end.
 
