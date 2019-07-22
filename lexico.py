@@ -14,8 +14,6 @@ COMMENT = '{.*?}'
 
 PATTERNS = {
     'Keyword': KEYWORDS,
-    'Identifier': IDENTIFIER,
-    
     'Real': REAL,
     'Integer': INTEGER,
     'Delimiter': DELIMITER,
@@ -23,6 +21,7 @@ PATTERNS = {
     'Relational': RELATIONAL,
     'Aditive': ADITIVE,
     'Multiplicative': MULTIPLICATIVE,
+    'Identifier': IDENTIFIER,
     'Comment': COMMENT
 }
 
