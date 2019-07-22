@@ -11,6 +11,7 @@ RELATIONAL = '^((?<!:)=|<(?!(=|>))|>(?!=)|<=|>=|<>)'
 ADITIVE = '^(\+|-|or)'
 MULTIPLICATIVE = '^(\*|/|and)'
 COMMENT = '{.*?}'
+BOOLEAN = '^(true|false)\\b'
 
 PATTERNS = {
     'Keyword': KEYWORDS,
@@ -21,6 +22,7 @@ PATTERNS = {
     'Relational': RELATIONAL,
     'Aditive': ADITIVE,
     'Multiplicative': MULTIPLICATIVE,
+    'Boolean': BOOLEAN,
     'Identifier': IDENTIFIER,
     'Comment': COMMENT
 }

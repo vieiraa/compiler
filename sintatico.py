@@ -25,9 +25,9 @@ class Sintatico:
         return self.program(token)
 
     def program(self, token):
-        
+
         #debug('program', token)
-        
+
         if token.token == 'program':
             token = self.next_token()
 
@@ -35,7 +35,7 @@ class Sintatico:
                 token = self.next_token()
 
                 if token.token == ';':
-                    token = self.next_token()                  
+                    token = self.next_token()
                     token = self.declaracoes_variaveis(token)
                     token = self.declaracoes_subprogramas(token)
                     token = self.comando_composto(token)
@@ -78,7 +78,7 @@ class Sintatico:
 
     def _lista_declaracoes_variaveis(self, token):
         #debug('_list decl vars', token)
-        
+
         token = self.lista_identificadores(token)
         if token.token == ':':
             token = self.next_token()
@@ -103,7 +103,7 @@ class Sintatico:
 
     def _lista_identificadores(self, token):
         #debug('_list ids', token)
-        
+
         if token.token == ',':
             token = self.next_token()
             if token.what == 'Identifier':
@@ -124,7 +124,7 @@ class Sintatico:
 
     def declaracoes_subprogramas(self, token):
         debug('decl subprogramas', None)
-        
+
         token = self._declaracoes_subprogramas(token)
 
         return token
@@ -137,7 +137,7 @@ class Sintatico:
             token = self.next_token()
             token = self._declaracoes_subprogramas(token)
             return token
-        
+
         return token
 
     def declaracao_subprograma(self, token):
@@ -195,7 +195,7 @@ class Sintatico:
         if token.token == 'begin':
             token = self.next_token()
             token = self.comandos_opcionais(token)
-            
+
             if token.token == 'end':
                 return self.next_token()
             raise Exception('Missing end', token)
@@ -216,7 +216,7 @@ class Sintatico:
         aux = self.comando(token)
         if aux is not None:
             token = aux
-            
+
             token = self._lista_comandos(token)
 
         return token
@@ -230,9 +230,9 @@ class Sintatico:
             aux = self.comando(token)
             if aux:
                 token = aux
-            
+
             token = self._lista_comandos(token)
-            
+
         #token = self.next_token()
         return token
 
@@ -249,11 +249,13 @@ class Sintatico:
                     token = self.next_token()
                     token = self.expressao(token)
 
-                    return token
+                    ret = token
+                    raise ValueError()
                 else:
                     token = self.ativacao_procedimento(token)
                     token = self.lista_expressoes(token)
-                    return token
+                    ret = token
+                    raise ValueError()
 
             elif token.token == 'if':
                 token = self.next_token()
@@ -268,7 +270,8 @@ class Sintatico:
                     if aux:
                         token = aux
 
-                    return token
+                    ret = token
+                    raise ValueError()
                 else:
                     raise Exception("Missing 'then' after if")
 
@@ -278,17 +281,22 @@ class Sintatico:
                 if token.token == 'do':
                     token = self.next_token()
                     token = self.comando(token)
-                    return token
+                    ret = token
+                    raise ValueError()
 
             elif token.token == 'begin':
                 token = self.comando_composto(token)
-                return token
+                ret = token
+                raise ValueError()
 
             elif token.token == ';':
-                token = self.next_token()
                 return token
-        except:
-            
+
+        except ValueError:
+            if ret.token == ';':
+                return ret
+            raise Exception('Missing ;')
+
 
     def parte_else(self, token):
         if DEBUG:
@@ -321,7 +329,7 @@ class Sintatico:
             raise Exception("Missing ')'")
 
         return self.next_token()
-                
+
     def lista_expressoes(self, token):
         if DEBUG:
             print('list expr')
@@ -333,7 +341,7 @@ class Sintatico:
     def _lista_expressoes(self, token):
         if DEBUG:
             print('_lista expr')
-            
+
         if token.token == ',':
             token = self.next_token()
             token = self.expressao(token)
@@ -348,7 +356,7 @@ class Sintatico:
 
         token = self.expressao_simples(token)
         token = self._expressao(token)
-        
+
         return token
 
     def _expressao(self, token):
@@ -384,17 +392,17 @@ class Sintatico:
 
         if token.token in ['+', '-']:
             return self.next_token()
-        
+
         return None
 
     def termo(self, token):
         if DEBUG:
             print('termo')
-            
+
         aux = self.fator(token)
         if aux:
             token = self._termo(aux)
-        
+
         return token
 
     def _termo(self, token):
@@ -416,7 +424,7 @@ class Sintatico:
 
         elif token.token in ['true', 'false']:
             return self.next_token()
-        
+
         elif token.what in ['Integer', 'Real']:
             return self.next_token()
 
@@ -441,14 +449,18 @@ class Sintatico:
             raise Exception('Missing )')
         return self.next_token()
 
-
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print(f'Usage: python sintatico.py filename')
         sys.exit(0)
 
     with open(sys.argv[1], 'r') as infile:
-        tokens = lx.tokenize(infile.read())
+        tokens = None
+        try:
+            tokens = lx.tokenize(infile.read())
+        except Exception as ex:
+            print(ex)
+            exit(1)
 
     sin = Sintatico(tokens)
     try:
