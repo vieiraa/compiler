@@ -30,5 +30,13 @@ begin
    valor:=20=10;
    valor:=true;
    valor(0,1, 2);
+
+   case valor of
+     0 : begin valor := 1; valor2:= 2; end;
+     1 : while () do x := 69;
+     2 : valor(0,1);
+     3 : valor3 := 1 + 2;
+   else valor4 := 5;
+   end;
 end.
 

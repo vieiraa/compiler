@@ -274,6 +274,27 @@ class Sintatico:
                     raise ValueError()
                 else:
                     raise Exception("Missing 'then' after if")
+                
+            elif token.token == 'case':
+                token = self.next_token()
+                if token.what == 'Identifier':
+                    token = self.next_token()
+                    if token.token == 'of':
+                        token = self.next_token()
+                        token = self.lista_case(token)
+                        aux = self.parte_else(token)
+                        if aux:
+                            token = aux
+                            token = self.next_token()
+                        if token.token == 'end':
+                            ret = self.next_token()
+                            raise ValueError()
+                        else:
+                            raise Exception('Missing end')
+                    else:
+                        raise Exception('Missing of')
+                else:
+                    raise Exception('Expecting identifier')
 
             elif token.token == 'while':
                 token = self.next_token()
@@ -284,6 +305,8 @@ class Sintatico:
                     token = self.comando(token)
                     ret = token
                     raise ValueError()
+                else:
+                    raise Exception('Missing do after while')
 
             elif token.token == 'begin':
                 token = self.comando_composto(token)
@@ -297,6 +320,40 @@ class Sintatico:
             if ret.token == ';':
                 return ret
             raise Exception('Missing ;')
+
+    def lista_case(self, token):
+        if token.what == 'Integer':
+            token = self.next_token()
+            if token.token == ':':
+                token = self.next_token()
+                token = self.lista_comandos(token)
+                aux = self._lista_case(token)
+
+                if aux:
+                    token = aux
+
+                return token
+            else:
+                raise Exception('Missing :')
+        else:
+            raise Exception('Expecting integer')
+            
+
+    def _lista_case(self, token):
+        if token.what == 'Integer':
+            token = self.next_token()
+            if token.token == ':':
+                token = self.next_token()
+                token = self.lista_comandos(token)
+                aux = self._lista_case(token)
+                if aux:
+                    token = aux
+
+                return token
+            else:
+                raise Exception('Missing :')
+        else:
+            return None
 
     def parte_else(self, token):
         if DEBUG:

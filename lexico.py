@@ -1,7 +1,7 @@
 import sys
 import re
 
-KEYWORDS = '^(program|var|integer|real|boolean|procedure|begin|end|if|then|else|while|do|not)\\b'
+KEYWORDS = '^(program|var|integer|real|boolean|procedure|begin|end|if|then|else|while|do|not|case|of)\\b'
 IDENTIFIER = '^[a-z]\w*\\b'
 INTEGER = '^\d+(?!\.)'
 REAL = '^\d+\.\d*(e(\+|-)\d*)?'
