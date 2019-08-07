@@ -12,31 +12,31 @@ begin
 end;
 
 begin
-   valor1:=-1012 * 10;
-   valor2 := 2.;
-   valor2 := 10.0e+20;
+   valor1:=1 + 1.0;
+   valor1 := 2.;
+   valor2 := 1.0 + 1;
    
    if () then
       
-      valor := 30 <> 50;
+      valor1 := 30 <> 50;
    else
-      valor := 50 or 10;
+      valor1 := 50 or 10;
    while () do 
-      valor:=20 and 31;
-   valor:= 20 < 10;
-   valor:= 20 > 10;
-   valor:= 20 <= 10;
-   valor:= 20 >= 10;
-   valor:=20=10;
-   valor:=true;
-   valor(0,1, 2);
+      valor1:=20 and 31;
+   valor1:= 20 < 10;
+   valor1:= 20 > 10;
+   valor1:= 20 <= 10;
+   valor1:= 20 >= 10;
+   valor1:=20=10;
+   valor1:=20;
+   valor1(0,1, 2);
 
-   case valor of
-     0 : begin valor := 1; valor2:= 2; end;
-     1 : while () do x := 69;
-     2 : valor(0,1);
+   case valor1 of
+     0 : begin valor1 := 1; valor1:= 2; end;
+     1 : while () do valor1 := 69;
+     2 : valor1(0,1);
      3 : valor3 := 1 + 2;
-   else valor4 := 5;
+   else valor1 := 5;
    end;
 end.
 
