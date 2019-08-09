@@ -22,7 +22,7 @@ class Stack:
         self.stack = []
 
     def push(self, item):
-        if not self.search_scope(item):
+        if not self.search_scope(item, inner=True):
             self.stack.append(item)
         else:
             raise ScopeError(f'Name {item} already in use in this scope')
@@ -39,12 +39,16 @@ class Stack:
         while aux != '$':
             aux = self.stack.pop()
 
-    def search_scope(self, item):
+    def search_scope(self, item, inner=False):
         for token in reversed(self.stack):
-            if token == '$':
-                return None
+            if inner:
+                if token == '$':
+                    return None
             if token == item:
-                return token    
+                return token
+
+        return None
+
 
     def __str__(self):
         return str(self.stack)
@@ -70,18 +74,22 @@ class Sintatico:
     def __init__(self, tokens):
         self.tokens = tokens
         self.cur_token = 0
-        self.scope_stack = Stack()
+        self.var_stack = Stack()
+        self.proc_stack = Stack()
         self.type_stack = Stack()
         self.aux_type_stack = []
         self.working_and = None
         self.working_or = None
+        self.working_type = None
+        self.working_var = None
+        self.working_exp = None
 
     def debug_scope_stack(self):
         if DEBUG_STACK:
-            print(self.scope_stack)
+            print(self.var_stack)
 
     def check_scope(self, item):
-        if not self.scope_stack.search_scope(item):
+        if not self.var_stack.search_scope(item):
             raise ScopeError(f'Name {item} does not exist in this scope')
 
     def next_token(self):
@@ -100,12 +108,12 @@ class Sintatico:
         #debug('program', token)
 
         if token.token == 'program':
-            self.scope_stack.open_scope()
+            self.var_stack.open_scope()
             self.type_stack.open_scope()
             token = self.next_token()
 
             if token.what == 'Identifier':
-                self.scope_stack.push(token.token)
+                self.var_stack.push(token.token)
                 self.type_stack.push(Type(token.token, 'program'))
                 token = self.next_token()
 
@@ -116,7 +124,7 @@ class Sintatico:
                     token = self.comando_composto(token)
 
                     if token.token == '.':
-                        self.scope_stack.close_scope()
+                        self.var_stack.close_scope()
                         return True
                     else:
                         raise SyntaxError("Missing '.'")
@@ -173,10 +181,11 @@ class Sintatico:
 
         if token.what == 'Identifier':
             self.aux_type_stack.append(token.token)
-            self.scope_stack.push(token.token)
+            self.var_stack.push(token.token)
             token = self.next_token()
             token = self._lista_identificadores(token)
             return token
+
         return token
 
     def _lista_identificadores(self, token):
@@ -186,7 +195,7 @@ class Sintatico:
             token = self.next_token()
             if token.what == 'Identifier':
                 self.aux_type_stack.append(token.token)
-                self.scope_stack.push(token.token)
+                self.var_stack.push(token.token)
                 token = self.next_token()
                 token = self._lista_identificadores(token)
                 return token
@@ -228,16 +237,18 @@ class Sintatico:
         if token.token == 'procedure':
             token = self.next_token()
             if token.what == 'Identifier':
-                self.scope_stack.push(token.token)
-                self.scope_stack.open_scope()
+                self.proc_stack.push(token.token)
+                self.proc_stack.open_scope()
+                self.var_stack.open_scope()
                 self.type_stack.open_scope()
                 token = self.next_token()
                 token = self.argumentos(token)
                 token = self.declaracoes_variaveis(token)
                 token = self.comando_composto(token)
                 self.debug_scope_stack()
-                self.scope_stack.close_scope()
                 self.type_stack.close_scope()
+                self.var_stack.close_scope()
+                self.proc_stack.close_scope()
                 return token
             else:
                 raise SyntaxError('Invalid identifier')
@@ -267,6 +278,7 @@ class Sintatico:
             print('list params')
 
         token = self.lista_identificadores(token)
+
         if token.token == ':':
             token = self.next_token()
             token = self.tipo(token)
@@ -350,7 +362,7 @@ class Sintatico:
             elif token.token == 'if':
                 token = self.next_token()
                 token = self.expressao(token)
-                token = self.next_token()
+                #token = self.next_token()
                 if token.token == 'then':
                     token = self.next_token()
                     aux = self.comando(token)
@@ -364,6 +376,7 @@ class Sintatico:
                     ret = token
                     raise ValueError()
                 else:
+                    print(token, 'oi')
                     raise SyntaxError("Missing 'then' after if")
                 
             elif token.token == 'case':
@@ -501,8 +514,6 @@ class Sintatico:
 
     def _expressao(self, token):
         if token.what == 'Relational':
-            if self.working_type != 'boolean':
-                raise (f'{self.working_var} is a {self.working_type}. Type boolean required')
             token = self.next_token()
             token = self.expressao_simples(token)
             return token
@@ -525,7 +536,11 @@ class Sintatico:
                 op = token.token
                 if op == 'or':
                     if self.working_or:
-                        op1 = self.working_or
+                        if self.working_exp:
+                            op1 = lx.Token('true', 'Boolean', 0)
+                        else:
+                            op1 = self.working_or
+
                         op2 = self.next_token()
                         
                         if op1.what == 'Boolean' and op2.what == 'Boolean':
@@ -565,7 +580,10 @@ class Sintatico:
             op = token.token
             if op == 'and':
                 if self.working_and:
-                    op1 = self.working_and
+                    if self.working_exp:
+                        op1 = lx.Token('true', 'Boolean', 0)
+                    else:
+                        op1 = self.working_and
                     op2 = self.next_token()
 
                     if op1.what == 'Boolean' and op2.what == 'Boolean':
@@ -573,7 +591,7 @@ class Sintatico:
                     else:
                         raise TypeError(f'Incompatible types between {op1.what} and {op2.what}')
                         
-            else: 
+            else:
                 token = self.next_token()
            
                 token = self.fator(token)
@@ -586,14 +604,21 @@ class Sintatico:
             print('fator')
 
         if token.what == 'Identifier':
-            this_type = self.type_stack.search_scope(token.token).type_
+            self.working_type = self.type_stack.search_scope(token.token).type_
+            this_type = self.type_stack.search_scope(token.token)
+            if this_type:
+                this_type = this_type.type_
+            else:
+                raise ScopeError(f'Variable {token.token} does not exist in this scope')
             token = self.next_token()
+            print(token)
             token = self._fator(token)
             return token
 
         elif token.token in ['true', 'false']:
-            if self.working_type != 'boolean':
-                raise TypeError(f'Type boolean is incompatible with type {self.working_type} of {self.working_var}')
+            if self.working_type:
+                if self.working_type != 'boolean':
+                    raise TypeError(f'Type boolean is incompatible with type {self.working_type} of {self.working_var}')
             return self.next_token()
 
         elif token.what == 'Real':
@@ -605,15 +630,17 @@ class Sintatico:
         elif token.what in 'Integer':
             if self.working_type != 'real':
                 if self.working_type != 'integer' and self.working_type != 'boolean':
-                    raise TypeError(f'Type {type_} of {token.token} is incompatible with type {self.working_type} of {self.working_var}')
+                    raise TypeError(f'Token {token.token} is incompatible with type {self.working_type} of {self.working_var}')
             return self.next_token()
 
 
         elif token.token == '(':
             token = self.next_token()
+            self.working_exp = True
             token = self.expressao(token)
             if token.token == ')':
-                return token#self.next_token()
+                ret = self.next_token()
+                return ret
             raise SyntaxError('Missing )')
 
         elif token.token == 'not':
@@ -628,7 +655,7 @@ class Sintatico:
             if token.token == ')':
                 return self.next_token()
             raise SyntaxError('Missing )')
-        return self.next_token()
+        return token#self.next_token()
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
